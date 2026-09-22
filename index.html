@@ -122,24 +122,12 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
   <button class="navBtn folderNav" data-folder="kurikulum">Kurikulum & PdP</button>
 
   <div class="navLabel">Data</div>
+  <button class="navBtn" id="openDriveBtn">Google Drive</button>
   <button class="navBtn" id="exportBtn">Backup Metadata</button>
   <button class="navBtn" id="resetBtn">Alih Semua PDF ke Sampah</button>
 </aside>
 
 <main class="main">
-  <section class="panel" aria-label="Sambungan Google Drive">
-    <div class="panelHead"><h3>Storan Google Drive</h3><span class="badge warn" id="driveBadge">Belum disambung</span></div>
-    <p id="driveStatus" class="sub" role="status">Sambung akaun Google untuk memuatkan dan menyimpan PDF.</p>
-    <div class="tools">
-      <button class="btn primary" id="connectDriveBtn">Sambung Google Drive</button>
-      <button class="btn" id="refreshDriveBtn" disabled>Muat Semula Drive</button>
-      <a class="btn" href="https://drive.google.com/drive/folders/1AXYqFzVWNJdnaUbQPaH8P9JS1x1hY1I2" target="_blank" rel="noopener noreferrer">Buka Folder Drive</a>
-      <button class="btn" id="driveSettingsBtn">Tetapan Drive</button>
-      <button class="btn" id="disconnectDriveBtn" disabled>Log Keluar</button>
-    </div>
-    <div id="driveError" role="alert" class="hidden" style="margin-top:12px;padding:12px;background:#fff2f2;color:#922b2b;border-radius:9px;white-space:pre-wrap"></div>
-    <p class="meta">PDF disimpan dalam folder Drive pilihan. Had 5 MB setiap PDF. Klik Muat Semula Drive untuk mengambil perubahan daripada peranti lain.</p>
-  </section>
   <div class="header">
     <div>
       <h2 id="pageTitle">Dashboard Pengurusan Panitia RBT</h2>
@@ -233,10 +221,26 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
 </main>
 </div>
 
+<dialog id="driveDialog" aria-labelledby="driveDialogTitle">
+  <div class="modal">
+    <div class="panelHead"><h3 id="driveDialogTitle" style="margin:0">Google Drive</h3><button class="btn small" onclick="document.getElementById('driveDialog').close()" aria-label="Tutup sambungan Drive">Tutup</button></div>
+    <p class="sub">Tempat simpanan PDF panitia: <strong>ePanitia_Data</strong>.</p>
+    <p><span class="badge warn" id="driveBadge">Belum disambung</span></p>
+    <p id="driveStatus" class="sub" role="status">Sambung akaun Google untuk memuatkan dan menyimpan PDF.</p>
+    <div class="tools">
+      <button class="btn primary" id="connectDriveBtn">Sambung Google Drive</button>
+      <button class="btn" id="refreshDriveBtn" disabled>Muat Semula Drive</button>
+      <a class="btn" href="https://drive.google.com/drive/folders/1AXYqFzVWNJdnaUbQPaH8P9JS1x1hY1I2" target="_blank" rel="noopener noreferrer">Buka Folder Drive</a>
+      <button class="btn" id="disconnectDriveBtn" disabled>Log Keluar</button>
+    </div>
+    <div id="driveError" role="alert" class="hidden" style="margin-top:12px;padding:12px;background:#fff2f2;color:#922b2b;border-radius:9px;white-space:pre-wrap"></div>
+    <div style="border-top:1px solid var(--line);margin-top:20px;padding-top:14px"><button class="btn small" id="driveSettingsBtn">Tetapan pentadbir</button></div>
+  </div>
+</dialog>
 <dialog id="driveSettingsDialog">
   <div class="modal">
-    <h3>Tetapan sambungan Google</h3>
-    <p class="sub">Isi sekali menggunakan projek Google Cloud sendiri. Panduan lengkap ada dalam PANDUAN.md.</p>
+    <h3>Tetapan pentadbir</h3>
+    <p class="sub">Untuk pentadbir yang menyediakan sambungan Google Drive. <a href="https://github.com/wanjer266/rbtsisme-dashboard/blob/main/PANDUAN.md" target="_blank" rel="noopener noreferrer">Buka panduan tetapan</a>.</p>
     <div class="formGrid">
       <div class="field full"><label for="googleClientId">OAuth Client ID (Web application)</label><input id="googleClientId" class="control" placeholder="123...apps.googleusercontent.com"></div>
       <div class="field full"><label for="googleApiKey">API Key untuk Google Picker</label><input id="googleApiKey" class="control" autocomplete="off"></div>
@@ -639,7 +643,7 @@ async function refreshCurrentView(){
 function showDriveError(error){
   $("driveError").textContent=error?.message||String(error);
   $("driveError").classList.remove("hidden");
-  if(document.querySelector('dialog[open]'))toast(error?.message||"Tindakan gagal. Semak mesej di atas halaman.");
+  if(!$("driveDialog").open)$("driveDialog").showModal();
 }
 let actionBusy=false;
 function guarded(fn){return async function(...args){
@@ -656,11 +660,13 @@ function getDriveSettings(){
 }
 function updateDriveState(){
   const s=DriveStore.state();
-  $("driveBadge").textContent=s.ready?"Disambung":"Belum disambung";
+  const configured=!!getDriveSettings().clientId;
+  $("driveBadge").textContent=s.ready?"Disambung":configured?"Belum disambung":"Menunggu tetapan pentadbir";
   $("driveBadge").className=s.ready?'badge':'badge warn';
-  $("driveStatus").textContent=s.ready?`Akaun: ${s.account} • PDF dan rekod disimpan dalam folder Drive pilihan.`:'Sambung akaun Google untuk memuatkan dan menyimpan PDF.';
-  if(!actionBusy){$("refreshDriveBtn").disabled=!s.ready;$("disconnectDriveBtn").disabled=!s.ready;}
+  $("driveStatus").textContent=s.ready?`Akaun: ${s.account}`:configured?'Log masuk dengan akaun Google yang mempunyai akses ke folder panitia.':'Pentadbir sekolah perlu melengkapkan tetapan sambungan sebelum PDF boleh disimpan melalui laman ini.';
+  if(!actionBusy){$("connectDriveBtn").disabled=!configured;$("refreshDriveBtn").disabled=!s.ready;$("disconnectDriveBtn").disabled=!s.ready;}
 }
+$("openDriveBtn").onclick=()=>{updateDriveState();$("driveDialog").showModal()};
 window.addEventListener('drive-state',()=>{
   updateDriveState();
   if(!DriveStore.state().ready){

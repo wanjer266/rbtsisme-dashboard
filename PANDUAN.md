@@ -14,7 +14,7 @@ Alamat laman selepas GitHub Pages berjaya diterbitkan: https://wanjer266.github.
 6. Cipta API key untuk Google Picker. Hadkan kepada laman web `https://wanjer266.github.io/*` (serta `http://127.0.0.1:8765/*` jika menguji). Hadkan API kepada Google Picker API. Gunakan projek yang sama dengan OAuth Client.
 7. Isi **clientId**, **apiKey**, dan **projectNumber** dalam `config.js`. Client ID, API key pelayar yang dihadkan, dan nombor projek ialah tetapan awam. Jangan masukkan OAuth client secret, kata laluan atau access token.
 
-Sebagai alternatif, isikan nilai sama melalui butang **Tetapan Drive**. Tetapan ini disimpan dalam pelayar itu sahaja. Nilai tidak kosong dalam `config.js` mengatasi tetapan pelayar.
+Sebagai alternatif, isikan nilai sama melalui menu sisi **Google Drive → Tetapan pentadbir**. Tetapan ini disimpan dalam pelayar itu sahaja. Nilai tidak kosong dalam `config.js` mengatasi tetapan pelayar.
 
 ## Terbitkan melalui GitHub
 
@@ -25,7 +25,7 @@ Sebagai alternatif, isikan nilai sama melalui butang **Tetapan Drive**. Tetapan 
 
 ## Penggunaan
 
-- Klik **Sambung Google Drive** dan pilih akaun pemilik/editor folder `ePanitia_Data`.
+- Buka menu sisi **Google Drive**, kemudian klik **Sambung Google Drive** dan pilih akaun pemilik/editor folder `ePanitia_Data`.
 - Pada sambungan pertama, Google Picker mungkin dibuka. Pilih folder **ePanitia_Data** yang ID-nya sepadan dengan pautan di atas. Folder lain ditolak.
 - Pilih subjek, tahun, fail dan subtajuk; tekan **Upload PDF**. Had: **5 MB** setiap PDF.
 - Mesej berjaya hanya muncul selepas Google Drive mengesahkan simpanan. PDF serta metadata kategori disimpan dalam folder pilihan.
@@ -52,3 +52,4 @@ Rujukan rasmi:
 - https://developers.google.com/workspace/drive/api/guides/api-specific-auth
 - https://developers.google.com/workspace/drive/picker/guides/overview
 - https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
+
