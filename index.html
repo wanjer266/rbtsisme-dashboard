@@ -508,7 +508,7 @@ $("saveDocBtn").onclick=async()=>{
   await logActivity("Dokumen dimuat naik",title);
   $("uploadDialog").close();toast("PDF berjaya disimpan dalam Google Drive.");await showFolder(uploadTarget.folder);
 };
-async function viewPdf(id){const d=await getOne("documents",id);if(!d)return;if(currentBlobUrl)URL.revokeObjectURL(currentBlobUrl);currentBlobUrl=URL.createObjectURL(await DriveStore.pdf(id));$("viewerTitle").textContent=d.title;$("pdfViewer").src=currentBlobUrl+"#toolbar=1";$("viewerDialog").showModal()}
+async function viewPdf(id){const d=await getOne("documents",id);if(!d)return;if(currentBlobUrl){URL.revokeObjectURL(currentBlobUrl);currentBlobUrl=null}$("viewerTitle").textContent=d.title;$("pdfViewer").src="https://drive.google.com/file/d/"+encodeURIComponent(d.driveFileId)+"/preview";$("viewerDialog").showModal()}
 async function downloadPdf(id){const d=await getOne("documents",id);if(!d)return;const u=URL.createObjectURL(await DriveStore.pdf(id)),a=document.createElement("a");a.href=u;a.download=d.fileName||"dokumen.pdf";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 async function openEdit(id){
   const d=await getOne("documents",id);
