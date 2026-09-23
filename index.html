@@ -293,8 +293,6 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
 
 <script src="config.js"></script>
 <script src="drive.js"></script>
-<script src="https://accounts.google.com/gsi/client" async></script>
-<script src="https://apis.google.com/js/api.js" async></script>
 <script>
 const STRUCTURE=[
 {id:"pengurusan",name:"Fail 1 – Pengurusan Panitia",subs:["Carta Organisasi Panitia","Maklumat Ahli Panitia","Rumusan Perancangan Aktiviti Tahunan","Rumusan Perbelanjaan PCG","Rekod Pencerapan"]},
@@ -316,7 +314,10 @@ function formatDate(iso){return new Date(iso).toLocaleString("ms-MY",{dateStyle:
 function statusClass(s){return s==="Lengkap"?"status-complete":s==="Perlu Kemaskini"?"status-update":"status-draft"}
 function statusBadge(s){return `<span class="statusBadge ${statusClass(s)}">${esc(s)}</span>`}
 
-async function openDB(){}
+async function openDB(){
+  const c=getDriveSettings();
+  if(c.backendUrl)try{await DriveStore.connect(c.backendUrl,{background:true})}catch(e){toast(e.message)}
+}
 const getAll=name=>DriveStore.all(name);
 const getOne=(name,id)=>DriveStore.one(name,id);
 const addOne=(name,obj)=>DriveStore.add(name,obj);
@@ -615,14 +616,14 @@ function getDriveSettings(){return window.PANITIA_CONFIG||{}}
 let connecting=null;
 async function ensureDrive(required=true){
   const c=getDriveSettings();
-  if(!c.clientId){
+  if(!c.backendUrl){
     if(required)showDriveError(new Error('Simpanan PDF ke Drive belum diaktifkan. Pentadbir sekolah perlu melengkapkan tetapan sambungan terlebih dahulu.'));
     return false;
   }
   if(DriveStore.state().ready)return true;
   if(!connecting){
     connecting=(async()=>{
-      await DriveStore.connect(c.clientId,c.apiKey,c.projectNumber,c.folderId);
+      await DriveStore.connect(c.backendUrl);
       const docs=await getAll('documents');
       let years;try{years=JSON.parse(localStorage.getItem('panitia_years')||'[]')}catch{years=[]}
       localStorage.setItem('panitia_years',JSON.stringify([...new Set([2026,2025,2024,...(Array.isArray(years)?years:[]),...docs.map(d=>Number(d.year))])]));
@@ -647,14 +648,14 @@ function guarded(fn,{connect=true,refresh=false}={}){return async function(...ar
 document.querySelectorAll('[data-view],.folderNav,.subjectBtn').forEach(button=>{
   const original=button.onclick;
   button.onclick=guarded(async function(event){
-    if(getDriveSettings().clientId&&!await ensureDrive())return;
+    if(getDriveSettings().backendUrl&&!await ensureDrive())return;
     if(DriveStore.state().ready)await DriveStore.refresh();
     return original.call(this,event);
   },{connect:false});
 });
 const originalShowFolder=showFolder;
 showFolder=async function(id){
-  if(getDriveSettings().clientId&&!await ensureDrive())return;
+  if(getDriveSettings().backendUrl&&!await ensureDrive())return;
   return originalShowFolder(id);
 };
 ['saveDocBtn','saveEditBtn','saveClassBtn','saveLinkBtn','resetBtn','exportBtn'].forEach(id=>{$(id).onclick=guarded($(id).onclick)});

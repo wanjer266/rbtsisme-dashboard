@@ -1,191 +1,84 @@
-/* Google Drive storage. OAuth tokens live only in memory. */
-const DriveStore = (() => {
-  const scope = 'https://www.googleapis.com/auth/drive.file';
-  const app = 'panitia-drive-v1';
-  const api = 'https://www.googleapis.com/drive/v3';
-  const collections = ['documents', 'classes', 'links', 'activities'];
-  let token = '', expires = 0, folder = '', account = '', ready = false;
-  let records = Object.fromEntries(collections.map(k => [k, []]));
-  const notify = () => window.dispatchEvent(new Event('drive-state'));
-  const copy = value => structuredClone(value);
-  function disconnect() {
-    token = ''; expires = 0; folder = ''; account = ''; ready = false;
-    records = Object.fromEntries(collections.map(k => [k, []]));
-    notify();
+/* Private Apps Script connection; no Google tokens are stored in the website. */
+const DriveStore=(()=>{
+  const kinds=['documents','classes','links','activities'];
+  let data=Object.fromEntries(kinds.map(k=>[k,[]])),revision='',ready=false;
+  let peer=null,peerOrigin='',channel='',frame=null,popup=null,connecting=null;
+  const pending=new Map();let requestId=0,handshake=null;
+  function notify(){window.dispatchEvent(new Event('drive-state'))}
+  function reset(){ready=false;peer=null;revision='';data=Object.fromEntries(kinds.map(k=>[k,[]]));notify()}
+  function accept(snapshot){
+    if(!snapshot?.state||!snapshot.revision)throw new Error('Rekod Drive tidak dapat dibaca.');
+    for(const k of kinds)if(!Array.isArray(snapshot.state[k]))throw new Error('Format rekod tidak sah.');
+    data=snapshot.state;revision=snapshot.revision;ready=true;notify();
   }
-  function requireToken() {
-    if (!token || Date.now() >= expires) {
-      disconnect();
-      throw new Error('Sesi Google tamat atau belum disambung. Klik menu subjek untuk log masuk.');
-    }
-  }
-  async function request(url, options = {}, raw = false) {
-    requireToken();
-    let response;
-    try {
-      response = await fetch(url, {...options, headers: {...options.headers, Authorization: 'Bearer ' + token}});
-    } catch {
-      throw new Error('Sambungan terputus. Klik menu subjek untuk memuat semula rekod sebelum mencuba lagi untuk menyemak sama ada fail telah disimpan.');
-    }
-    if (!response.ok) {
-      if (response.status === 401) { disconnect(); throw new Error('Sesi Google tamat. Klik menu subjek untuk log masuk semula.'); }
-      let detail = '';
-      try { detail = (await response.json()).error?.message || ''; } catch {}
-      const error = new Error('Google Drive (' + response.status + '): ' + (detail || 'Permintaan gagal. Cuba lagi.'));
-      error.status = response.status;
-      throw error;
-    }
-    return raw ? response : response.status === 204 ? null : response.json();
-  }
-  async function list(query) {
-    const files = []; let pageToken;
-    do {
-      const params = new URLSearchParams({q: query, spaces:'drive', pageSize:'1000', fields:'nextPageToken,files(id,name,description,appProperties,modifiedTime)', ...(pageToken ? {pageToken} : {})});
-      const data = await request(api + '/files?' + params);
-      files.push(...(data.files || [])); pageToken = data.nextPageToken;
-    } while (pageToken);
-    return files;
-  }
-  async function refresh() {
-    requireToken();
-    const files = await list("'" + folder + "' in parents and trashed = false");
-    const next = Object.fromEntries(collections.map(k => [k, []]));
-    let invalid = 0;
-    for (const file of files) {
-      const kind = file.appProperties?.collection;
-      if (file.appProperties?.app !== app || !collections.includes(kind)) continue;
-      try {
-        const value = JSON.parse(file.description);
-        if (!Number.isSafeInteger(value.id) || value.id <= 0 || value.schema !== 1) throw new Error('Invalid record');
-        next[kind].push({...value, _driveId: file.id, _modified: file.modifiedTime});
-      } catch { invalid++; }
-    }
-    if (invalid) throw new Error(invalid + ' rekod Drive tidak dapat dibaca. Data belum dimuat semula; semak Description fail atau pulihkan versi sebelumnya dalam Drive.');
-    records = next; ready = true; notify();
-  }
-  function authorize(clientId) {
-    return new Promise((resolve, reject) => {
-      if (!window.google?.accounts?.oauth2) return reject(new Error('Skrip Google belum dimuatkan. Semak internet dan cuba lagi.'));
-      const client = google.accounts.oauth2.initTokenClient({
-        client_id:clientId, scope, include_granted_scopes:false,
-        callback: result => {
-          if (result.error || !result.access_token) return reject(new Error('Sambungan Google tidak diluluskan: ' + (result.error || 'tiada token')));
-          if (!google.accounts.oauth2.hasGrantedAllScopes(result, scope)) return reject(new Error('Benarkan akses fail aplikasi untuk menyimpan PDF.'));
-          token = result.access_token; expires = Date.now() + Number(result.expires_in || 3600) * 1000 - 30000;
-          resolve();
-        },
-        error_callback: () => reject(new Error('Tetingkap log masuk ditutup atau disekat. Benarkan pop-up dan cuba semula.'))
-      });
-      client.requestAccessToken({prompt:'select_account'});
+  window.addEventListener('message',event=>{
+    const message=event.data;
+    if(!message||message.channel!==channel)return;
+    let origin;try{origin=new URL(event.origin)}catch{return}
+    if(origin.protocol!=='https:'||!(origin.hostname==='script.google.com'||origin.hostname.endsWith('.googleusercontent.com')))return;
+    if(message.type==='panitia-ready'&&handshake){peer=event.source;peerOrigin=event.origin;handshake.resolve();return}
+    if(event.source!==peer||event.origin!==peerOrigin||message.type!=='panitia-response')return;
+    const task=pending.get(message.id);if(!task)return;
+    pending.delete(message.id);clearTimeout(task.timer);
+    if(message.error)task.reject(new Error(message.error));else task.resolve(message.result);
+  });
+  function rpc(request){
+    if(!peer)throw new Error('Sambungan Drive belum siap. Klik menu untuk menyambung semula.');
+    const id=++requestId;
+    return new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{pending.delete(id);reject(new Error('Respons Drive terlalu lama. Klik menu subjek untuk menyemak rekod sebelum mencuba lagi.'))},90000);
+      pending.set(id,{resolve,reject,timer});
+      peer.postMessage({type:'panitia-request',channel,id,request},peerOrigin);
     });
   }
-  function chooseFolder(apiKey, projectNumber, targetFolder) {
-    return new Promise((resolve, reject) => {
-      if (!apiKey || !projectNumber) return reject(new Error('Isi API Key dan Google Cloud Project Number dalam config.js untuk membenarkan folder pilihan.'));
-      if (!window.gapi) return reject(new Error('Google Picker belum dimuatkan. Semak internet.'));
-      gapi.load('picker', {callback: () => {
-        const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true);
-        new google.picker.PickerBuilder().addView(view).setOAuthToken(token).setDeveloperKey(apiKey).setAppId(projectNumber)
-          .setOrigin(location.origin).setTitle('Pilih folder e-Fail yang telah ditetapkan')
-          .setCallback(data => {
-            if (data.action === google.picker.Action.CANCEL) reject(new Error('Pemilihan folder dibatalkan.'));
-            if (data.action === google.picker.Action.PICKED) {
-              if (data.docs?.[0]?.id !== targetFolder) reject(new Error('Folder tidak sepadan. Pilih folder daripada pautan Drive yang ditetapkan.'));
-              else resolve();
-            }
-          }).build().setVisible(true);
-      }, onerror: () => reject(new Error('Google Picker gagal dimuatkan.')), timeout:15000, ontimeout: () => reject(new Error('Google Picker terlalu lambat. Cuba lagi.'))});
-    });
-  }
-  async function connect(clientId, apiKey, projectNumber, targetFolder) {
-    if (!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(clientId)) throw new Error('Isi Google OAuth Client ID yang sah dalam config.js.');
-    if (location.protocol === 'file:') throw new Error('Sambungan Google memerlukan laman GitHub Pages atau localhost. Rujuk PANDUAN.md.');
-    disconnect();
-    try {
-      await authorize(clientId);
-      const about = await request(api + '/about?fields=user(displayName,emailAddress)');
-      account = about.user?.emailAddress || about.user?.displayName || 'Akaun Google';
-      if (!/^[\w-]+$/.test(targetFolder)) throw new Error('ID folder Drive tidak sah.');
-      const folderUrl = api+'/files/'+targetFolder+'?fields=id,mimeType,trashed,capabilities(canAddChildren)';
-      let selected;
-      try { selected = await request(folderUrl); }
-      catch (error) {
-        if (error.status !== 404 && error.status !== 403) throw error;
-        await chooseFolder(apiKey,projectNumber,targetFolder);
-        selected = await request(folderUrl);
+  async function refresh(){accept(await rpc({op:'load'}))}
+  async function connect(url,{background=false}={}){
+    if(ready)return;
+    if(connecting)return connecting;
+    const endpoint=new URL(url);
+    if(endpoint.origin!=='https://script.google.com'||!endpoint.pathname.endsWith('/exec'))throw new Error('Alamat sambungan Drive tidak sah.');
+    reset();channel=crypto.randomUUID();endpoint.searchParams.set('bridge','github');endpoint.searchParams.set('channel',channel);
+    connecting=new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{handshake=null;reject(new Error(background?'Klik menu untuk membuka sambungan Drive.':'Selesaikan log masuk Google dalam tetingkap sambungan, kemudian klik menu sekali lagi.'))},background?18000:180000);
+      handshake={resolve:()=>{clearTimeout(timer);handshake=null;resolve()}};
+      if(background){
+        frame?.remove();frame=document.createElement('iframe');frame.hidden=true;frame.title='Sambungan Drive';frame.src=endpoint.href;document.body.appendChild(frame);
+      }else{
+        endpoint.searchParams.set('popup','1');popup=window.open(endpoint.href,'panitiaDrive','popup,width=620,height=700');
+        if(!popup){clearTimeout(timer);handshake=null;reject(new Error('Benarkan pop-up Google untuk menyambungkan Drive.'))}
+        else {
+          endpoint.searchParams.delete('popup');
+          const retry=setInterval(()=>{
+            if(!handshake){clearInterval(retry);if(ready)popup?.close();return}
+            frame?.remove();frame=document.createElement('iframe');frame.hidden=true;frame.title='Sambungan Drive';frame.src=endpoint.href;document.body.appendChild(frame);
+          },5000);
+        }
       }
-      if (selected.trashed || selected.mimeType !== 'application/vnd.google-apps.folder' || !selected.capabilities?.canAddChildren) throw new Error('Folder tidak tersedia atau akaun ini tiada izin memuat naik. Gunakan akaun pemilik/editor folder.');
-      folder = selected.id;
-      await refresh();
-    } catch (error) { disconnect(); throw error; }
+    }).then(refresh).finally(()=>{connecting=null});
+    return connecting;
   }
-  function requireReady() { requireToken(); if (!ready) throw new Error('Muat semula rekod Drive dahulu.'); }
-  function uniqueId() {
-    let id;
-    do { const a = crypto.getRandomValues(new Uint32Array(2)); id = (a[0] & 0x1fffff) * 4294967296 + a[1]; }
-    while (!id || Object.values(records).some(arr => arr.some(r => r.id === id)));
-    return id;
+  async function base64(file){
+    if(!(file instanceof Blob)||file.size>5*1024*1024||await file.slice(0,5).text()!=='%PDF-')throw new Error('Pilih PDF yang sah, maksimum 5 MB.');
+    return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(new Error('PDF gagal dibaca.'));r.readAsDataURL(file)});
   }
-  async function write(kind, value, existing) {
-    requireReady();
-    const {fileBlob, _driveId, _modified, ...metadata} = value;
-    metadata.schema = 1;
-    if (kind === 'documents' && !existing) {
-      if (!(fileBlob instanceof Blob)) throw new Error('Fail PDF tidak ditemui.');
-      if (fileBlob.size > 5 * 1024 * 1024) throw new Error('Had muat naik ialah 5 MB setiap PDF. Kecilkan saiz PDF dahulu.');
-      const header = await fileBlob.slice(0, 5).text();
-      if (header !== '%PDF-') throw new Error('Kandungan fail bukan PDF yang sah.');
-    }
-    if (existing) {
-      const current = await request(api + '/files/' + existing._driveId + '?fields=modifiedTime,trashed');
-      if (current.trashed || current.modifiedTime !== existing._modified) throw new Error('Rekod telah berubah pada peranti lain. Klik menu subjek untuk memuat semula rekod sebelum mengedit lagi.');
-    }
-    const details = {
-      name: kind === 'documents' ? value.fileName : kind + '-' + value.id + '.json',
-      description: JSON.stringify(metadata),
-      appProperties:{app,collection:kind},
-      ...(!existing ? {parents:[folder], mimeType:kind === 'documents' ? 'application/pdf' : 'application/json'} : {})
-    };
-    let result;
-    if (existing && kind === 'documents') {
-      result = await request(api + '/files/' + existing._driveId + '?fields=id,modifiedTime', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(details)});
-    } else {
-      const boundary = 'panitia_' + crypto.randomUUID();
-      const content = kind === 'documents' ? fileBlob : new Blob([JSON.stringify(metadata)], {type:'application/json'});
-      const body = new Blob(['--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n',JSON.stringify(details),'\r\n--'+boundary+'\r\nContent-Type: '+(kind === 'documents' ? 'application/pdf' : 'application/json')+'\r\n\r\n',content,'\r\n--'+boundary+'--\r\n']);
-      result = await request('https://www.googleapis.com/upload/drive/v3/files' + (existing ? '/'+existing._driveId : '') + '?uploadType=multipart&fields=id,modifiedTime', {method:existing?'PATCH':'POST', headers:{'Content-Type':'multipart/related; boundary='+boundary}, body});
-    }
-    const saved = {...metadata, _driveId:result.id, _modified:result.modifiedTime};
-    const index = records[kind].findIndex(x => x.id === value.id);
-    if (index < 0) records[kind].push(saved); else records[kind][index] = saved;
-    return value.id;
-  }
-  async function remove(kind, id) {
-    requireReady();
-    const value = records[kind].find(x => x.id === Number(id));
-    if (!value) throw new Error('Rekod tidak ditemui. Klik menu subjek untuk memuat semula rekod.');
-    await request(api + '/files/' + value._driveId, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({trashed:true})});
-    records[kind] = records[kind].filter(x => x.id !== Number(id));
+  function uniqueId(){let id;do{const a=crypto.getRandomValues(new Uint32Array(2));id=(a[0]&0x1fffff)*4294967296+a[1]}while(!id||kinds.some(k=>data[k].some(d=>d.id===id)));return id}
+  async function write(op,kind,value){
+    if(!ready)throw new Error('Sambungan Drive belum siap.');
+    const {fileBlob,...record}=value;
+    const request={op,kind,value:record,revision};
+    if(op==='add'&&kind==='documents')request.base64=await base64(fileBlob);
+    accept(await rpc(request));return record.id;
   }
   return {
-    connect, disconnect, refresh,
-    state: () => ({ready:ready && Date.now() < expires, account, folder}),
-    all: async kind => copy(records[kind]),
-    one: async (kind,id) => copy(records[kind].find(x => x.id === Number(id))),
-    add: (kind,value) => write(kind,{...value,id:uniqueId()},null),
-    put: (kind,value) => {
-      const existing = records[kind].find(x => x.id === value.id);
-      if (!existing) throw new Error('Rekod tidak ditemui. Klik menu subjek untuk memuat semula rekod.');
-      return write(kind,value,existing);
-    },
-    remove,
-    clear: async kind => { for (const value of [...records[kind]]) await remove(kind,value.id); },
-    pdf: async id => {
-      requireReady();
-      const d = records.documents.find(x => x.id === Number(id));
-      if (!d) throw new Error('PDF tidak ditemui.');
-      return (await request(api+'/files/'+d._driveId+'?alt=media',{},true)).blob();
-    }
+    connect,refresh,
+    disconnect:()=>{frame?.remove();popup?.close();reset()},
+    state:()=>({ready,folder:window.PANITIA_CONFIG?.folderId}),
+    all:async k=>structuredClone(data[k]),
+    one:async(k,id)=>structuredClone(data[k].find(d=>d.id===Number(id))),
+    add:(k,v)=>write('add',k,{...v,id:uniqueId()}),
+    put:(k,v)=>write('put',k,v),
+    remove:async(k,id)=>{accept(await rpc({op:'remove',kind:k,id,revision}))},
+    clear:async k=>{accept(await rpc({op:'clear',kind:k,revision}))},
+    pdf:async id=>{const result=await rpc({op:'pdf',id});return new Blob([Uint8Array.from(atob(result.base64),c=>c.charCodeAt(0))],{type:'application/pdf'})}
   };
 })();
-
