@@ -122,9 +122,8 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
   <button class="navBtn folderNav" data-folder="kurikulum">Kurikulum & PdP</button>
 
   <div class="navLabel">Data</div>
-  <button class="navBtn" id="openDriveBtn">Google Drive</button>
   <button class="navBtn" id="exportBtn">Backup Metadata</button>
-  <button class="navBtn" id="resetBtn">Alih Semua PDF ke Sampah</button>
+  <button class="navBtn" id="resetBtn">Padam Semua Dokumen</button>
 </aside>
 
 <main class="main">
@@ -134,13 +133,13 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
       <div class="sub" id="pageSub">Ringkasan dokumen RBT bagi tahun 2026.</div>
     </div>
     <div class="tools">
-      <select aria-label="Tahun dipilih" id="yearSelect" class="control">
+      <select id="yearSelect" class="control">
         <option value="2026">Tahun 2026</option>
         <option value="2025">Tahun 2025</option>
         <option value="2024">Tahun 2024</option>
       </select>
       <button class="btn" id="addYearBtn">+ Tambah Tahun</button>
-      <input aria-label="Carian pantas" id="quickSearch" class="control search" placeholder="Cari dokumen...">
+      <input id="quickSearch" class="control search" placeholder="Cari dokumen...">
     </div>
   </div>
 
@@ -206,7 +205,7 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
           <option value="Draf">Draf</option>
         </select>
       </div>
-      <input aria-label="Cari semua dokumen" id="allSearch" class="control" style="width:100%" placeholder="Cari tajuk, subtajuk atau nama fail...">
+      <input id="allSearch" class="control" style="width:100%" placeholder="Cari tajuk, subtajuk atau nama fail...">
       <div id="searchResults" style="display:grid;gap:10px;margin-top:13px"></div>
     </div>
   </section>
@@ -221,43 +220,13 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
 </main>
 </div>
 
-<dialog id="driveDialog" aria-labelledby="driveDialogTitle">
-  <div class="modal">
-    <div class="panelHead"><h3 id="driveDialogTitle" style="margin:0">Google Drive</h3><button class="btn small" onclick="document.getElementById('driveDialog').close()" aria-label="Tutup sambungan Drive">Tutup</button></div>
-    <p class="sub">Tempat simpanan PDF panitia: <strong>ePanitia_Data</strong>.</p>
-    <p><span class="badge warn" id="driveBadge">Belum disambung</span></p>
-    <p id="driveStatus" class="sub" role="status">Sambung akaun Google untuk memuatkan dan menyimpan PDF.</p>
-    <div class="tools">
-      <button class="btn primary" id="connectDriveBtn">Sambung Google Drive</button>
-      <button class="btn" id="refreshDriveBtn" disabled>Muat Semula Drive</button>
-      <a class="btn" href="https://drive.google.com/drive/folders/1AXYqFzVWNJdnaUbQPaH8P9JS1x1hY1I2" target="_blank" rel="noopener noreferrer">Buka Folder Drive</a>
-      <button class="btn" id="disconnectDriveBtn" disabled>Log Keluar</button>
-    </div>
-    <div id="driveError" role="alert" class="hidden" style="margin-top:12px;padding:12px;background:#fff2f2;color:#922b2b;border-radius:9px;white-space:pre-wrap"></div>
-    <div style="border-top:1px solid var(--line);margin-top:20px;padding-top:14px"><button class="btn small" id="driveSettingsBtn">Tetapan pentadbir</button></div>
-  </div>
-</dialog>
-<dialog id="driveSettingsDialog">
-  <div class="modal">
-    <h3>Tetapan pentadbir</h3>
-    <p class="sub">Untuk pentadbir yang menyediakan sambungan Google Drive. <a href="https://github.com/wanjer266/rbtsisme-dashboard/blob/main/PANDUAN.md" target="_blank" rel="noopener noreferrer">Buka panduan tetapan</a>.</p>
-    <div class="formGrid">
-      <div class="field full"><label for="googleClientId">OAuth Client ID (Web application)</label><input id="googleClientId" class="control" placeholder="123...apps.googleusercontent.com"></div>
-      <div class="field full"><label for="googleApiKey">API Key untuk Google Picker</label><input id="googleApiKey" class="control" autocomplete="off"></div>
-      <div class="field full"><label for="googleProjectNumber">Google Cloud Project Number</label><input id="googleProjectNumber" class="control" inputmode="numeric"></div>
-    </div>
-    <p class="meta">OAuth origin laman ini: <strong id="originHint"></strong>. Folder Drive telah ditetapkan. Gunakan akaun yang mempunyai akses ke folder.</p>
-    <div class="modalActions"><button class="btn" onclick="document.getElementById('driveSettingsDialog').close()">Batal</button><button class="btn primary" id="saveDriveSettingsBtn">Simpan Tetapan</button></div>
-  </div>
-</dialog>
-<div id="busyNotice" role="status" class="hidden" style="position:fixed;z-index:999;bottom:18px;left:50%;transform:translateX(-50%);background:#172944;color:white;padding:14px 24px;border-radius:12px">Sedang memproses…</div>
 <dialog id="uploadDialog">
   <div class="modal">
     <h3 id="uploadHeading">Upload PDF</h3>
     <div class="formGrid">
-      <div class="field full"><label for="docTitle">Tajuk Dokumen</label><input id="docTitle" class="control"></div>
-      <div class="field"><label for="docYear">Tahun</label><input id="docYear" class="control" readonly></div>
-      <div class="field" id="docClassField"><label for="docClass">Kelas</label><select id="docClass" class="control"><option value="">Umum / Semua Kelas</option></select></div>
+      <div class="field full"><label>Tajuk Dokumen</label><input id="docTitle" class="control"></div>
+      <div class="field"><label>Tahun</label><input id="docYear" class="control" readonly></div>
+      <div class="field" id="docClassField"><label>Kelas</label><select id="docClass" class="control"><option value="">Umum / Semua Kelas</option></select></div>
       <div class="field"><label>Status</label>
         <select id="docStatus" class="control">
           <option value="Lengkap">Lengkap</option>
@@ -265,8 +234,8 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
           <option value="Draf">Draf</option>
         </select>
       </div>
-      <div class="field"><label for="docFile">PDF</label><input id="docFile" class="control" type="file" accept=".pdf,application/pdf"></div>
-      <div class="field full"><label for="docNotes">Catatan</label><textarea id="docNotes" class="control textarea"></textarea></div>
+      <div class="field"><label>PDF</label><input id="docFile" class="control" type="file" accept=".pdf,application/pdf"></div>
+      <div class="field full"><label>Catatan</label><textarea id="docNotes" class="control textarea"></textarea></div>
     </div>
     <div class="modalActions"><button class="btn" onclick="uploadDialog.close()">Batal</button><button class="btn primary" id="saveDocBtn">Simpan PDF</button></div>
   </div>
@@ -276,8 +245,8 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
   <div class="modal">
     <h3>Edit Dokumen</h3>
     <div class="formGrid">
-      <div class="field full"><label for="editTitle">Tajuk Dokumen</label><input id="editTitle" class="control"></div>
-      <div class="field" id="editClassField"><label for="editClass">Kelas</label><select id="editClass" class="control"><option value="">Umum / Semua Kelas</option></select></div>
+      <div class="field full"><label>Tajuk Dokumen</label><input id="editTitle" class="control"></div>
+      <div class="field" id="editClassField"><label>Kelas</label><select id="editClass" class="control"><option value="">Umum / Semua Kelas</option></select></div>
       <div class="field"><label>Status</label>
         <select id="editStatus" class="control">
           <option value="Lengkap">Lengkap</option>
@@ -285,7 +254,7 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
           <option value="Draf">Draf</option>
         </select>
       </div>
-      <div class="field full"><label for="editNotes">Catatan</label><textarea id="editNotes" class="control textarea"></textarea></div>
+      <div class="field full"><label>Catatan</label><textarea id="editNotes" class="control textarea"></textarea></div>
     </div>
     <div class="modalActions"><button class="btn" onclick="editDialog.close()">Batal</button><button class="btn primary" id="saveEditBtn">Simpan</button></div>
   </div>
@@ -295,7 +264,7 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
   <div class="modal">
     <h3 id="classDialogTitle">Tambah Kelas</h3>
     <div class="formGrid">
-      <div class="field full"><label for="className">Nama Kelas</label><input id="className" class="control" placeholder="Contoh: 2 Khaldun"></div>
+      <div class="field full"><label>Nama Kelas</label><input id="className" class="control" placeholder="Contoh: 2 Khaldun"></div>
     </div>
     <div class="modalActions"><button class="btn" onclick="classDialog.close()">Batal</button><button class="btn primary" id="saveClassBtn">Simpan Kelas</button></div>
   </div>
@@ -305,9 +274,9 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
   <div class="modal">
     <h3 id="linkDialogTitle">Tambah Pautan</h3>
     <div class="formGrid">
-      <div class="field full"><label for="linkName">Nama Pautan</label><input id="linkName" class="control" placeholder="Contoh: eReport Sekolah"></div>
-      <div class="field full"><label for="linkUrl">URL</label><input id="linkUrl" class="control" placeholder="https://..."></div>
-      <div class="field full"><label for="linkNotes">Catatan</label><textarea id="linkNotes" class="control textarea"></textarea></div>
+      <div class="field full"><label>Nama Pautan</label><input id="linkName" class="control" placeholder="Contoh: eReport Sekolah"></div>
+      <div class="field full"><label>URL</label><input id="linkUrl" class="control" placeholder="https://..."></div>
+      <div class="field full"><label>Catatan</label><textarea id="linkNotes" class="control textarea"></textarea></div>
     </div>
     <div class="modalActions"><button class="btn" onclick="linkDialog.close()">Batal</button><button class="btn primary" id="saveLinkBtn">Simpan Pautan</button></div>
   </div>
@@ -347,13 +316,13 @@ function formatDate(iso){return new Date(iso).toLocaleString("ms-MY",{dateStyle:
 function statusClass(s){return s==="Lengkap"?"status-complete":s==="Perlu Kemaskini"?"status-update":"status-draft"}
 function statusBadge(s){return `<span class="statusBadge ${statusClass(s)}">${esc(s)}</span>`}
 
-async function openDB() {}
-const getAll = name => DriveStore.all(name);
-const getOne = (name,id) => DriveStore.one(name,id);
-const addOne = (name,obj) => DriveStore.add(name,obj);
-const putOne = (name,obj) => DriveStore.put(name,obj);
-const delOne = (name,id) => DriveStore.remove(name,id);
-const clearStore = name => DriveStore.clear(name);
+async function openDB(){}
+const getAll=name=>DriveStore.all(name);
+const getOne=(name,id)=>DriveStore.one(name,id);
+const addOne=(name,obj)=>DriveStore.add(name,obj);
+const putOne=(name,obj)=>DriveStore.put(name,obj);
+const delOne=(name,id)=>DriveStore.remove(name,id);
+const clearStore=name=>DriveStore.clear(name);
 
 async function logActivity(action,detail){
   try{await addOne("activities",{subject:currentSubject,action,detail,at:new Date().toISOString()})}catch(e){}
@@ -507,7 +476,7 @@ async function showFolder(id){
   document.querySelectorAll(".folderNav").forEach(b=>b.classList.toggle("active",b.dataset.folder===id));
 }
 async function openUpload(folder,subtopic){
-  if(!DriveStore.state().ready) return showDriveError(new Error("Sambung Google Drive sebelum memuat naik PDF."));
+  if(!await ensureDrive())return;
   uploadTarget={folder,subtopic};
   await refreshClassControls();
 
@@ -610,7 +579,7 @@ $("quickSearch").addEventListener("keydown",e=>{if(e.key==="Enter")showSearch(e.
 $("allSearch").oninput=e=>runSearch(e.target.value);
 ["searchYear","searchClass","searchFolder","searchStatus"].forEach(id=>$(id).onchange=()=>runSearch($("allSearch").value));
 $("exportBtn").onclick=async()=>{const docs=await getAll("documents"),links=await getAll("links"),classes=await getAll("classes"),meta=docs.map(({fileBlob,...x})=>x),blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),documents:meta,links,classes},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="backup_metadata_panitia.json";a.click()};
-$("resetBtn").onclick=async()=>{if(!confirm("Alih SEMUA PDF aplikasi ini ke Sampah Google Drive? Fail lain dalam folder tidak disentuh."))return;await clearStore("documents");await logActivity("Semua dokumen dipadam","Reset dokumen");toast("Semua PDF aplikasi dialihkan ke Sampah Drive.");await showDashboard()};
+$("resetBtn").onclick=async()=>{if(!confirm("Alih semua PDF yang didaftarkan aplikasi ini ke Sampah Google Drive? Fail lain tidak disentuh."))return;await clearStore("documents");await logActivity("Semua dokumen dipadam","Reset dokumen");toast("PDF dialihkan ke Sampah Google Drive.");await showDashboard()};
 
 
 // Missing actions in the supplied version, completed for Drive storage.
@@ -640,77 +609,70 @@ async function refreshCurrentView(){
   else if(!$("linksView").classList.contains("hidden"))await renderLinks();
   else await showDashboard();
 }
-function showDriveError(error){
-  $("driveError").textContent=error?.message||String(error);
-  $("driveError").classList.remove("hidden");
-  if(!$("driveDialog").open)$("driveDialog").showModal();
+
+function showDriveError(error){alert(error?.message||String(error))}
+function getDriveSettings(){return window.PANITIA_CONFIG||{}}
+let connecting=null;
+async function ensureDrive(required=true){
+  const c=getDriveSettings();
+  if(!c.clientId){
+    if(required)showDriveError(new Error('Simpanan PDF ke Drive belum diaktifkan. Pentadbir sekolah perlu melengkapkan tetapan sambungan terlebih dahulu.'));
+    return false;
+  }
+  if(DriveStore.state().ready)return true;
+  if(!connecting){
+    connecting=(async()=>{
+      await DriveStore.connect(c.clientId,c.apiKey,c.projectNumber,c.folderId);
+      const docs=await getAll('documents');
+      let years;try{years=JSON.parse(localStorage.getItem('panitia_years')||'[]')}catch{years=[]}
+      localStorage.setItem('panitia_years',JSON.stringify([...new Set([2026,2025,2024,...(Array.isArray(years)?years:[]),...docs.map(d=>Number(d.year))])]));
+      loadYears();await refreshClassControls();
+    })();
+  }
+  try{await connecting;return true}catch(error){showDriveError(error);return false}finally{connecting=null}
 }
 let actionBusy=false;
-function guarded(fn){return async function(...args){
-  if(actionBusy)return;actionBusy=true;$("driveError").classList.add("hidden");
+function guarded(fn,{connect=true,refresh=false}={}){return async function(...args){
+  if(actionBusy)return;actionBusy=true;
   const buttons=[...document.querySelectorAll('button,select,input,textarea')].map(b=>[b,b.disabled]);
-  buttons.forEach(([b])=>b.disabled=true);$("busyNotice").classList.remove("hidden");
-  try{return await fn.apply(this,args)}catch(error){showDriveError(error)}
-  finally{buttons.forEach(([b,disabled])=>b.disabled=disabled);actionBusy=false;$("busyNotice").classList.add("hidden");updateDriveState()}
+  buttons.forEach(([b])=>b.disabled=true);
+  try{
+    if(connect&&!await ensureDrive())return;
+    if(refresh&&DriveStore.state().ready)await DriveStore.refresh();
+    return await fn.apply(this,args);
+  }catch(error){showDriveError(error)}
+  finally{buttons.forEach(([b,disabled])=>b.disabled=disabled);actionBusy=false}
 }}
-function getDriveSettings(){
-  let saved={};try{saved=JSON.parse(localStorage.getItem('panitia_google_settings')||'{}')}catch{}
-  const cfg=window.PANITIA_CONFIG||{};
-  return {clientId:cfg.clientId||saved.clientId||'',apiKey:cfg.apiKey||saved.apiKey||'',projectNumber:cfg.projectNumber||saved.projectNumber||'',folderId:cfg.folderId};
-}
-function updateDriveState(){
-  const s=DriveStore.state();
-  const configured=!!getDriveSettings().clientId;
-  $("driveBadge").textContent=s.ready?"Disambung":configured?"Belum disambung":"Menunggu tetapan pentadbir";
-  $("driveBadge").className=s.ready?'badge':'badge warn';
-  $("driveStatus").textContent=s.ready?`Akaun: ${s.account}`:configured?'Log masuk dengan akaun Google yang mempunyai akses ke folder panitia.':'Pentadbir sekolah perlu melengkapkan tetapan sambungan sebelum PDF boleh disimpan melalui laman ini.';
-  if(!actionBusy){$("connectDriveBtn").disabled=!configured;$("refreshDriveBtn").disabled=!s.ready;$("disconnectDriveBtn").disabled=!s.ready;}
-}
-$("openDriveBtn").onclick=()=>{updateDriveState();$("driveDialog").showModal()};
+// Authorize through the original navigation, without adding dashboard controls.
+document.querySelectorAll('[data-view],.folderNav,.subjectBtn').forEach(button=>{
+  const original=button.onclick;
+  button.onclick=guarded(async function(event){
+    if(getDriveSettings().clientId&&!await ensureDrive())return;
+    if(DriveStore.state().ready)await DriveStore.refresh();
+    return original.call(this,event);
+  },{connect:false});
+});
+const originalShowFolder=showFolder;
+showFolder=async function(id){
+  if(getDriveSettings().clientId&&!await ensureDrive())return;
+  return originalShowFolder(id);
+};
+['saveDocBtn','saveEditBtn','saveClassBtn','saveLinkBtn','resetBtn','exportBtn'].forEach(id=>{$(id).onclick=guarded($(id).onclick)});
+viewPdf=guarded(viewPdf);downloadPdf=guarded(downloadPdf);removePdf=guarded(removePdf);removeSavedLink=guarded(removeSavedLink);
 window.addEventListener('drive-state',()=>{
-  updateDriveState();
   if(!DriveStore.state().ready){
     if(currentBlobUrl){URL.revokeObjectURL(currentBlobUrl);currentBlobUrl=null}
-    $("pdfViewer").src='about:blank';
-    for(const d of document.querySelectorAll('dialog[open]'))d.close();
+    $('pdfViewer').src='about:blank';$('viewerDialog').close();
     currentClassFilter='ALL';showDashboard().catch(showDriveError);
   }
 });
-$("connectDriveBtn").onclick=async()=>{
-  const c=getDriveSettings();
-  if(!c.clientId){$("driveSettingsBtn").click();return}
-  await guarded(async()=>{
-    await DriveStore.connect(c.clientId,c.apiKey,c.projectNumber,c.folderId);
-    const docs=await getAll('documents');
-    let years;try{years=JSON.parse(localStorage.getItem('panitia_years')||'[]')}catch{years=[]}
-    localStorage.setItem('panitia_years',JSON.stringify([...new Set([2026,2025,2024,...(Array.isArray(years)?years:[]),...docs.map(d=>Number(d.year))])]));
-    loadYears();await refreshClassControls();await showDashboard();toast("Google Drive disambung.");
-  })();
-};
-$("refreshDriveBtn").onclick=async()=>{await DriveStore.refresh();await refreshCurrentView();toast("Rekod terkini dimuatkan.")};
-$("disconnectDriveBtn").onclick=()=>{DriveStore.disconnect();toast("Sesi aplikasi ditutup.")};
-$("driveSettingsBtn").onclick=()=>{
-  const c=getDriveSettings();$("googleClientId").value=c.clientId;$("googleApiKey").value=c.apiKey;$("googleProjectNumber").value=c.projectNumber;
-  $("originHint").textContent=location.origin==='null'?'https://wanjer266.github.io':location.origin;
-  $("driveSettingsDialog").showModal();
-};
-$("saveDriveSettingsBtn").onclick=()=>{
-  const clientId=$("googleClientId").value.trim(),apiKey=$("googleApiKey").value.trim(),projectNumber=$("googleProjectNumber").value.trim();
-  if(!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(clientId))return toast("OAuth Client ID tidak sah.");
-  if(!apiKey||!/^\d+$/.test(projectNumber))return toast("Isi API Key dan nombor projek Google Cloud.");
-  localStorage.setItem('panitia_google_settings',JSON.stringify({clientId,apiKey,projectNumber}));
-  DriveStore.disconnect();$("driveSettingsDialog").close();toast("Tetapan disimpan. Klik Sambung Google Drive.");
-};
-['saveDocBtn','saveEditBtn','saveClassBtn','saveLinkBtn','resetBtn','refreshDriveBtn','exportBtn'].forEach(id=>{$(id).onclick=guarded($(id).onclick)});
-viewPdf=guarded(viewPdf);downloadPdf=guarded(downloadPdf);removePdf=guarded(removePdf);removeSavedLink=guarded(removeSavedLink);
-$("viewerDialog").addEventListener('close',()=>{if(currentBlobUrl){URL.revokeObjectURL(currentBlobUrl);currentBlobUrl=null}$("pdfViewer").src='about:blank'});
+$('viewerDialog').addEventListener('close',()=>{if(currentBlobUrl){URL.revokeObjectURL(currentBlobUrl);currentBlobUrl=null}$('pdfViewer').src='about:blank'});
 window.addEventListener('unhandledrejection',event=>{event.preventDefault();showDriveError(event.reason)});
-updateDriveState();
 
 (async()=>{
   loadYears();
   try{await openDB();await refreshClassControls();await showDashboard()}
-  catch(err){console.error(err);toast("Aplikasi gagal dimulakan.");$("summaryFolders").innerHTML='<div class="empty">Sistem gagal dimulakan. Semak fail drive.js dan muat semula halaman.</div>'}
+  catch(err){console.error(err);toast("Aplikasi gagal dimulakan.");$("summaryFolders").innerHTML='<div class="empty">Sistem gagal dimulakan. Cuba muat semula halaman.</div>'}
 })();
 </script>
 </body>

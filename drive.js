@@ -16,7 +16,7 @@ const DriveStore = (() => {
   function requireToken() {
     if (!token || Date.now() >= expires) {
       disconnect();
-      throw new Error('Sesi Google tamat atau belum disambung. Klik Sambung Google Drive.');
+      throw new Error('Sesi Google tamat atau belum disambung. Klik menu subjek untuk log masuk.');
     }
   }
   async function request(url, options = {}, raw = false) {
@@ -25,10 +25,10 @@ const DriveStore = (() => {
     try {
       response = await fetch(url, {...options, headers: {...options.headers, Authorization: 'Bearer ' + token}});
     } catch {
-      throw new Error('Sambungan terputus. Klik Muat Semula Drive sebelum mencuba lagi untuk menyemak sama ada fail telah disimpan.');
+      throw new Error('Sambungan terputus. Klik menu subjek untuk memuat semula rekod sebelum mencuba lagi untuk menyemak sama ada fail telah disimpan.');
     }
     if (!response.ok) {
-      if (response.status === 401) { disconnect(); throw new Error('Sesi Google tamat. Sambung Google Drive semula.'); }
+      if (response.status === 401) { disconnect(); throw new Error('Sesi Google tamat. Klik menu subjek untuk log masuk semula.'); }
       let detail = '';
       try { detail = (await response.json()).error?.message || ''; } catch {}
       const error = new Error('Google Drive (' + response.status + '): ' + (detail || 'Permintaan gagal. Cuba lagi.'));
@@ -81,7 +81,7 @@ const DriveStore = (() => {
   }
   function chooseFolder(apiKey, projectNumber, targetFolder) {
     return new Promise((resolve, reject) => {
-      if (!apiKey || !projectNumber) return reject(new Error('Isi API Key dan Google Cloud Project Number dalam Tetapan Drive untuk membenarkan folder pilihan.'));
+      if (!apiKey || !projectNumber) return reject(new Error('Isi API Key dan Google Cloud Project Number dalam config.js untuk membenarkan folder pilihan.'));
       if (!window.gapi) return reject(new Error('Google Picker belum dimuatkan. Semak internet.'));
       gapi.load('picker', {callback: () => {
         const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true);
@@ -98,7 +98,7 @@ const DriveStore = (() => {
     });
   }
   async function connect(clientId, apiKey, projectNumber, targetFolder) {
-    if (!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(clientId)) throw new Error('Isi Google OAuth Client ID yang sah dalam Tetapan Drive.');
+    if (!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(clientId)) throw new Error('Isi Google OAuth Client ID yang sah dalam config.js.');
     if (location.protocol === 'file:') throw new Error('Sambungan Google memerlukan laman GitHub Pages atau localhost. Rujuk PANDUAN.md.');
     disconnect();
     try {
@@ -138,7 +138,7 @@ const DriveStore = (() => {
     }
     if (existing) {
       const current = await request(api + '/files/' + existing._driveId + '?fields=modifiedTime,trashed');
-      if (current.trashed || current.modifiedTime !== existing._modified) throw new Error('Rekod telah berubah pada peranti lain. Klik Muat Semula Drive sebelum mengedit lagi.');
+      if (current.trashed || current.modifiedTime !== existing._modified) throw new Error('Rekod telah berubah pada peranti lain. Klik menu subjek untuk memuat semula rekod sebelum mengedit lagi.');
     }
     const details = {
       name: kind === 'documents' ? value.fileName : kind + '-' + value.id + '.json',
@@ -163,19 +163,19 @@ const DriveStore = (() => {
   async function remove(kind, id) {
     requireReady();
     const value = records[kind].find(x => x.id === Number(id));
-    if (!value) throw new Error('Rekod tidak ditemui. Muat semula Drive.');
+    if (!value) throw new Error('Rekod tidak ditemui. Klik menu subjek untuk memuat semula rekod.');
     await request(api + '/files/' + value._driveId, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({trashed:true})});
     records[kind] = records[kind].filter(x => x.id !== Number(id));
   }
   return {
     connect, disconnect, refresh,
-    state: () => ({ready, account, folder}),
+    state: () => ({ready:ready && Date.now() < expires, account, folder}),
     all: async kind => copy(records[kind]),
     one: async (kind,id) => copy(records[kind].find(x => x.id === Number(id))),
     add: (kind,value) => write(kind,{...value,id:uniqueId()},null),
     put: (kind,value) => {
       const existing = records[kind].find(x => x.id === value.id);
-      if (!existing) throw new Error('Rekod tidak ditemui. Muat semula Drive.');
+      if (!existing) throw new Error('Rekod tidak ditemui. Klik menu subjek untuk memuat semula rekod.');
       return write(kind,value,existing);
     },
     remove,
@@ -188,3 +188,4 @@ const DriveStore = (() => {
     }
   };
 })();
+

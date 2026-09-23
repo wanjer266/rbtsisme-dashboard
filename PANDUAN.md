@@ -14,7 +14,7 @@ Alamat laman selepas GitHub Pages berjaya diterbitkan: https://wanjer266.github.
 6. Cipta API key untuk Google Picker. Hadkan kepada laman web `https://wanjer266.github.io/*` (serta `http://127.0.0.1:8765/*` jika menguji). Hadkan API kepada Google Picker API. Gunakan projek yang sama dengan OAuth Client.
 7. Isi **clientId**, **apiKey**, dan **projectNumber** dalam `config.js`. Client ID, API key pelayar yang dihadkan, dan nombor projek ialah tetapan awam. Jangan masukkan OAuth client secret, kata laluan atau access token.
 
-Sebagai alternatif, isikan nilai sama melalui menu sisi **Google Drive → Tetapan pentadbir**. Tetapan ini disimpan dalam pelayar itu sahaja. Nilai tidak kosong dalam `config.js` mengatasi tetapan pelayar.
+Tetapan sambungan disediakan melalui `config.js` oleh pentadbir. Paparan utama mengekalkan semua HTML dan CSS asal, tanpa panel atau menu sambungan tambahan.
 
 ## Terbitkan melalui GitHub
 
@@ -25,17 +25,17 @@ Sebagai alternatif, isikan nilai sama melalui menu sisi **Google Drive → Tetap
 
 ## Penggunaan
 
-- Buka menu sisi **Google Drive**, kemudian klik **Sambung Google Drive** dan pilih akaun pemilik/editor folder `ePanitia_Data`.
+- Klik menu fail atau subjek seperti biasa. Selepas tetapan siap, Google akan meminta log masuk dan kebenaran Drive apabila diperlukan.
 - Pada sambungan pertama, Google Picker mungkin dibuka. Pilih folder **ePanitia_Data** yang ID-nya sepadan dengan pautan di atas. Folder lain ditolak.
 - Pilih subjek, tahun, fail dan subtajuk; tekan **Upload PDF**. Had: **5 MB** setiap PDF.
 - Mesej berjaya hanya muncul selepas Google Drive mengesahkan simpanan. PDF serta metadata kategori disimpan dalam folder pilihan.
 - PDF kekal mengikut kebenaran folder Drive. Aplikasi tidak menjadikannya awam. Halaman GitHub Pages dan kod aplikasi boleh dilihat awam, tetapi akses PDF memerlukan Google.
 - Tajuk, tahun, status dan kategori PDF disimpan dalam medan Description fail Drive. Rekod kelas, pautan dan aktiviti disimpan sebagai fail JSON berasingan. Elakkan mengubah Description secara manual.
 - Untuk komputer lain: buka alamat Pages yang sama, sambung Google menggunakan akaun yang sama dan projek OAuth yang sama.
-- **Muat Semula Drive** mengambil perubahan terkini. Elakkan mengedit rekod yang sama serentak di dua peranti; semakan perubahan membantu mengesan rekod lama tetapi bukan transaksi serentak penuh.
-- **Padam** memindahkan PDF ke Sampah Drive. Untuk memulihkan, restore melalui Drive dan kemudian muat semula aplikasi. Reset hanya menyentuh PDF yang didaftarkan oleh versi aplikasi ini.
-- **Log Keluar** membuang token sesi dan data paparan daripada aplikasi. Ia tidak melog keluar semua akaun Google dalam pelayar atau membatalkan kebenaran aplikasi di akaun Google.
-- Token disimpan dalam memori sahaja. Selepas refresh halaman atau sesi tamat, sambung Google semula. Apabila rangkaian terputus semasa muat naik, muat semula Drive sebelum cuba lagi untuk mengelakkan salinan pendua.
+- Klik semula menu atau subjek untuk mengambil perubahan terkini daripada Drive. Elakkan mengedit rekod yang sama serentak di dua peranti.
+- **Padam** memindahkan PDF ke Sampah Drive. Untuk memulihkan, restore melalui Drive dan kemudian klik menu subjek untuk memuat semula rekod. Reset hanya menyentuh PDF yang didaftarkan oleh versi aplikasi ini.
+- Menutup atau memuat semula halaman membuang token sesi daripada memori aplikasi. Kebenaran aplikasi boleh ditarik balik melalui tetapan akaun Google.
+- Token disimpan dalam memori sahaja. Selepas refresh halaman atau sesi tamat, klik menu untuk menyambung Google semula. Apabila rangkaian terputus semasa muat naik, klik menu subjek untuk memuat semula rekod sebelum cuba lagi untuk mengelakkan salinan pendua.
 
 ## Data versi lama
 
@@ -52,4 +52,5 @@ Rujukan rasmi:
 - https://developers.google.com/workspace/drive/api/guides/api-specific-auth
 - https://developers.google.com/workspace/drive/picker/guides/overview
 - https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
+
 
